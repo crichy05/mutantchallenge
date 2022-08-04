@@ -1,0 +1,138 @@
+---
+swagger: "2.0"
+info:
+  x-ibm-name: "apimutant"
+  title: "apiMutant"
+  version: "1.0.0"
+schemes:
+- "https"
+host: "$(catalog.host)"
+basePath: "/apimutant"
+consumes:
+- "application/json"
+produces:
+- "application/json"
+securityDefinitions: {}
+x-ibm-configuration:
+  testable: true
+  enforced: true
+  cors:
+    enabled: true
+  assembly:
+    execute:
+    - operation-switch:
+        title: "operation-switch"
+        case:
+        - operations:
+          - verb: "post"
+            path: "/mutant"
+          execute:
+          - gatewayscript:
+              title: "gatewayscript"
+              version: "1.0.0"
+              source: "//declaracion de variables\r\nvar parameters = apim.getvariable('request.body');\r\
+                \nvar dna = parameters.dna\r\nvar isMutant = false;\r\nvar longDna\
+                \ = dna.length;\r\nvar longChar = dna[0].length;\r\n\r\n//validacioHorizontal\r\
+                \nfor (var h = 0; h < longDna; h++) {\r\n    validateMutant(dna[h])\r\
+                \n}\r\n\r\nif (!isMutant) {\r\n    //validacionVertical\r\n    var\
+                \ arrayVer = [];\r\n    var l = longChar\r\n    for (var j = 0; j\
+                \ < l; j++) {\r\n        arrayVer[j] = dna[0].charAt(j);\r\n     \
+                \   //toma los primeros carateres de cada arreglo para la validacó\
+                n vertical\r\n        for (var i = 1; i < longDna; i++) {\r\n    \
+                \        arrayVer[j] += dna[i].charAt(j);\r\n        }\r\n       \
+                \ validateMutant(arrayVer[j])\r\n    }\r\n}\r\nif (!isMutant) {\r\n\
+                \    //validacionOblicua\r\n    var l = longChar\r\n    var vali =\
+                \ dna[0].charAt(0);\r\n    for (var j = 1; j < l; j++) {\r\n     \
+                \   vali += dna[j].charAt(j);\r\n    }\r\n    validateMutant(vali)\r\
+                \n\r\n}\r\nif (!isMutant) {\r\n    var l = arrayVer.length - 1\r\n\
+                \    var vali = arrayVer[l].charAt(0);\r\n    l -= 1\r\n    for (var\
+                \ j = 1; j < longChar; j++) {\r\n        vali += arrayVer[l].charAt(j);\r\
+                \n        l--\r\n    }\r\n    validateMutant(vali)\r\n}\r\nif (!isMutant)\
+                \ {\r\n    var l = arrayVer.length - 1\r\n    var u = arrayVer[0].length\
+                \ - 1\r\n    var vali = arrayVer[l].charAt(u);\r\n    l--\r\n    u--\r\
+                \n    for (l; l >= 0; l--) {\r\n        vali += arrayVer[l].charAt(u);\r\
+                \n        u--\r\n    }\r\n    validateMutant(vali)\r\n}\r\nif (!isMutant)\
+                \ {\r\n    var l = arrayVer[0].length - 1\r\n    //var u = arrayVer.length\
+                \ - 1\r\n    var vali = arrayVer[0].charAt(l);\r\n    l--\r\n    for\
+                \ (var j = 1; j < longChar; j++) {\r\n        vali += arrayVer[j].charAt(l);\r\
+                \n        l--\r\n    }\r\n    validateMutant(vali)\r\n}\r\n\r\nvar\
+                \ id = dna[0];\r\nfor (var j = 1; j < longDna; j++) {\r\n    id =\
+                \ id + \",\" + dna[j];\r\n}\r\n\r\nvar response = {\r\n    id: id,\r\
+                \n    isMutant: isMutant\r\n}\r\n\r\nconsole.log(isMutant)\r\n\r\n\
+                apim.setvariable('ctx.res', isMutant);\r\napim.output('application/son');\r\
+                \napim.setvariable('message.body', response)\r\n\r\n//compara las\
+                \ líneas del string y valida si cumple con la condición de mutante\r\
+                \nfunction validateMutant(val) {\r\n    if ((val.indexOf('AAAA') !=\
+                \ \"-1\") || (val.indexOf('CCCC') != \"-1\") || (val.indexOf('GGGG')\
+                \ != \"-1\") || (val.indexOf('TTTT') != \"-1\")) {\r\n        isMutant\
+                \ = true;\r\n    }\r\n}"
+          - invoke:
+              title: "invoke"
+              verb: "PUT"
+              cache-response: "protocol"
+              cache-ttl: 900
+              stop-on-error:
+              - "ConnectionError"
+              version: "1.0.0"
+              target-url: "https://4okx8j8se5.execute-api.us-east-1.amazonaws.com/items"
+              timeout: 20
+          - gatewayscript:
+              title: "gatewayscript"
+              version: "1.0.0"
+              source: "var response = apim.getvariable('ctx.res');\n\nif (!response){\n\
+                \    apim.setvariable('message.status.code', 403);\n}\napim.output('application/son');\n\
+                apim.setvariable('message.body', response);"
+        - operations:
+          - verb: "post"
+            path: "/stats"
+          execute:
+          - invoke:
+              title: "invoke"
+              timeout: 20
+              verb: "GET"
+              cache-response: "protocol"
+              cache-ttl: 900
+              stop-on-error:
+              - null
+              version: "1.0.0"
+              target-url: "https://4okx8j8se5.execute-api.us-east-1.amazonaws.com/items"
+          - gatewayscript:
+              title: "gatewayscript"
+              version: "1.0.0"
+              source: "var parameters = apim.getvariable('message.body');\nvar mutant\
+                \ = 0;\nvar noMutant = 0;\nvar items = parameters.Items;\n\n\nfor\
+                \ (var j=0;j<items.length;j++){\n    if (items[j].isMutant){\n   \
+                \     mutant++\n    }else{\n       noMutant++\n    }\n}\n\nvar ratio\
+                \ = noMutant/mutant;\n\nvar response = {\n    count_mutant_dna: mutant,\n\
+                \    count_human_dna: noMutant,\n    ratio: ratio\n}\n\napim.output('application/son');\n\
+                apim.setvariable('message.body', response);"
+        otherwise: []
+        version: "1.0.0"
+  phase: "realized"
+paths:
+  /mutant:
+    post:
+      responses:
+        200:
+          description: "200 OK"
+    parameters:
+    - name: "requestBody"
+      required: true
+      in: "body"
+      schema:
+        $ref: "#/definitions/dna"
+  /stats:
+    post:
+      responses:
+        200:
+          description: "200 OK"
+definitions:
+  dna:
+    type: "object"
+    required:
+    - "dna"
+    properties:
+      dna:
+        type: "string"
+        maxLength: 500
+tags: []
